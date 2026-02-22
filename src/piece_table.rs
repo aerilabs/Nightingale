@@ -1,4 +1,5 @@
 #[derive(Clone, Copy)]
+// The 2 buffers: one for original text, the other for added text
 enum BufferKind {
     Original,
     Add,
@@ -41,11 +42,13 @@ impl PieceTable {
                 BufferKind::Original => &self.original,
                 BufferKind::Add => &self.add,
             };
-            result.push_str(&source[piece.start..piece.start + piece.len]);
+            result.push_str(&source[piece.start..(piece.start + piece.len)]);
         }
 
         result
     }
+
+    pub fn insert(&mut self, pos: usize, text: &str) {}
 }
 
 #[cfg(test)]
