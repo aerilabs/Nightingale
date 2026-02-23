@@ -20,6 +20,9 @@ impl Cursor {
             self.index += 1;
         }
     }
+
+    pub fn insert_char(&mut self, table: &mut PieceTable, c: char) {}
+    pub fn delete_char(&mut self, table: &mut PieceTable) {}
 }
 
 #[cfg(test)]
