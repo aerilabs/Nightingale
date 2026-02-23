@@ -48,6 +48,40 @@ impl PieceTable {
         result
     }
 
+    pub fn delete(&mut self, pos: usize, len: usize) {
+        let mut offset = 0usize;
+        for i in 0..self.pieces.len() {
+            let piece = self.pieces[i];
+
+            if pos >= offset && pos <= (offset + piece.len) {
+                let split = pos - offset;
+
+                // Guard to prevent overflow
+                if split + len > piece.len {
+                    break;
+                }
+
+                let left_piece = Piece {
+                    buffer: piece.buffer,
+                    start: piece.start,
+                    len: split,
+                };
+
+                let right_piece = Piece {
+                    buffer: piece.buffer,
+                    start: piece.start + split + len,
+                    len: piece.len - split - len,
+                };
+
+                self.pieces.remove(i);
+                self.pieces.insert(i, right_piece);
+                self.pieces.insert(i, left_piece);
+                break;
+            }
+            offset += piece.len;
+        }
+    }
+
     pub fn insert(&mut self, pos: usize, text: &str) {
         let add_start = self.add.len();
         self.add.push_str(text);
@@ -111,5 +145,26 @@ mod tests {
         let mut pt = PieceTable::new("Rust".to_string());
         pt.insert(4, "acean");
         assert_eq!(pt.to_string(), "Rustacean");
+    }
+
+    #[test]
+    fn delete_from_start() {
+        let mut pt = PieceTable::new("Rust".to_string());
+        pt.delete(0, 4);
+        assert_eq!(pt.to_string(), "");
+    }
+
+    #[test]
+    fn delete_from_middle() {
+        let mut pt = PieceTable::new("Rust".to_string());
+        pt.delete(1, 1);
+        assert_eq!(pt.to_string(), "Rst");
+    }
+
+    #[test]
+    fn delete_from_end() {
+        let mut pt = PieceTable::new("Rust".to_string());
+        pt.delete(2, 1);
+        assert_eq!(pt.to_string(), "Rut");
     }
 }
