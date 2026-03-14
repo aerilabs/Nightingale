@@ -2,52 +2,52 @@
 
 ## Phase 1: Text Engine (Piece Table)
 
-- [ ] Create a new Rust project
-- [ ] Create a `PieceTable` struct
-- [ ] Store original file text
-- [ ] Store add buffer (append-only)
-- [ ] Define `Piece` structure
+- [x] Create a new Rust project
+- [x] Create a `PieceTable` struct
+- [x] Store original file text
+- [x] Store add buffer (append-only)
+- [x] Define `Piece` structure
 - [ ] Load a file into the piece table
-- [ ] Implement `to_string()` (reconstruct full text)
+- [x] Implement `to_string()` (reconstruct full text)
 
 ## Phase 2: Cursor & Editing
 
-- [ ] Create `Cursor` struct
-- [ ] Track cursor position (logical index)
-- [ ] Move cursor left
-- [ ] Move cursor right
-- [ ] Insert character at cursor
-- [ ] Delete character before cursor
+- [x] Create `Cursor` struct
+- [x] Track cursor position (logical index)
+- [x] Move cursor left
+- [x] Move cursor right
+- [x] Insert character at cursor
+- [x] Delete character before cursor
 - [ ] Prevent cursor from going out of bounds
-- [ ] Write tests for cursor movement
+- [x] Write tests for cursor movement
 - [ ] Write tests for cursor editing
 
 ## Rules (Do Not Break)
 
-- [ ] No UI code
-- [ ] No rendering
-- [ ] No async
-- [ ] No crates beyond std
+- [x] No UI code
+- [x] No rendering
+- [x] No async
+- [x] No crates beyond std
 
 
 Phase 3 Checklist (Insert & Delete)
 
 ## Core Piece Table Enhancements
 
-- [ ] Implement `PieceTable::insert(pos: usize, text: &str)` that:
-    - [ ] Splits the piece where insertion happens
-    - [ ] Adds new text to the add buffer
-    - [ ] Updates pieces vector to include the new piece
-- [ ] Implement `PieceTable::delete(start: usize, len: usize)` that:
-    - [ ] Splits pieces at deletion range
-    - [ ] Removes pieces or trims them
-    - [ ] Keeps original and add buffers immutable
+- [x] Implement `PieceTable::insert(pos: usize, text: &str)` that:
+    - [x] Splits the piece where insertion happens
+    - [x] Adds new text to the add buffer
+    - [x] Updates pieces vector to include the new piece
+- [x] Implement `PieceTable::delete(start: usize, len: usize)` that:
+    - [x] Splits pieces at deletion range
+    - [x] Removes pieces or trims them
+    - [x] Keeps original and add buffers immutable
 - [ ] Write unit tests for `insert`:
     - [ ] Insert at start
     - [ ] Insert in middle
     - [ ] Insert at end
 - [ ] Write unit tests for `delete`:
-    - [ ] Delete single character
+    - [x] Delete single character
     - [ ] Delete range across pieces
     - [ ] Delete at start/end
 

@@ -1,2 +1,2 @@
-pub mod piece_table;
 pub mod cursor;
+pub mod piece_table;
