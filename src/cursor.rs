@@ -21,8 +21,18 @@ impl Cursor {
         }
     }
 
-    pub fn insert_char(&mut self, table: &mut PieceTable, c: char) {}
-    pub fn delete_char(&mut self, table: &mut PieceTable) {}
+    pub fn insert_char(&mut self, table: &mut PieceTable, c: char) {
+        table.insert(self.index, &c.to_string());
+        self.index += 1;
+    }
+
+    pub fn delete_char(&mut self, table: &mut PieceTable) {
+        if self.index > 0 {
+            // Always delete one character
+            table.delete(self.index - 1, 1);
+            self.move_left();
+        }
+    }
 }
 
 #[cfg(test)]
@@ -56,5 +66,64 @@ mod tests {
         cursor.move_right(2);
         cursor.move_right(2);
         assert_eq!(cursor.index, 2);
+    }
+
+    #[test]
+    fn test_insert_char() {
+        let mut cursor = Cursor::new();
+        let mut table = PieceTable::new("".to_string());
+
+        // Assert that the cursor starts at 0
+        assert_eq!(cursor.index, 0);
+
+        // Insert 'H' at index 0
+        cursor.insert_char(&mut table, 'H');
+        cursor.insert_char(&mut table, 'i');
+
+        assert_eq!(table.to_string(), "Hi");
+        assert_eq!(cursor.index, 2);
+    }
+
+    #[test]
+    fn test_delete_char() {
+        let mut cursor = Cursor::new();
+        let mut table = PieceTable::new("Hello".to_string());
+
+        cursor.index = 5;
+
+        // Assert that the cursor is at 5
+        assert_eq!(cursor.index, 5);
+
+        // Insert 'H' at index 0
+        cursor.delete_char(&mut table);
+        cursor.delete_char(&mut table);
+
+        assert_eq!(table.to_string(), "Hel");
+        assert_eq!(cursor.index, 3);
+    }
+
+    #[test]
+    fn test_insert_then_delete() {
+        let mut cursor = Cursor::new();
+        let mut table = PieceTable::new("My name is Jose".to_string());
+
+        // Assert that the cursor starts at 0
+        assert_eq!(cursor.index, 0);
+
+        cursor.index = 15;
+
+        cursor.insert_char(&mut table, 'p');
+        cursor.insert_char(&mut table, 'h');
+
+        assert_eq!(table.to_string(), "My name is Joseph");
+        assert_eq!(cursor.index, 17);
+
+        cursor.index = 10;
+
+        cursor.delete_char(&mut table);
+        cursor.delete_char(&mut table);
+
+        assert_eq!(table.to_string(), "My name  Joseph");
+        assert_eq!(cursor.index, 8);
     }
 }
