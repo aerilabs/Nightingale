@@ -11,12 +11,14 @@ fn insert_at_start() {
     pt.insert(0, "R");
     assert_eq!(pt.to_string(), "Rust");
 }
+
 #[test]
 fn insert_at_middle() {
     let mut pt = PieceTable::new("Hi".to_string());
     pt.insert(1, "o");
     assert_eq!(pt.to_string(), "Hoi");
 }
+
 #[test]
 fn insert_at_end() {
     let mut pt = PieceTable::new("Rust".to_string());
