@@ -1,50 +1,213 @@
 use crate::piece_table::PieceTable;
 
+/// A cursor for navigating and editing text in a piece table.
+///
+/// The cursor maintains a position index and provides methods for
+/// movement and character-level editing operations.
+///
+/// # Examples
+///
+/// ```
+/// use your_crate::{PieceTable, Cursor};
+///
+/// let mut table = PieceTable::new("Hello".to_string());
+/// let mut cursor = Cursor::new();
+///
+/// // Move to end and insert text
+/// cursor.move_right(&table);
+/// cursor.move_right(&table);
+/// cursor.insert_char(&mut table, '!');
+///
+/// assert_eq!(table.to_string(), "He!llo");
+/// ```
 pub struct Cursor {
-    /// Set to private to ensure that nothing outside the module can directly read or write the field
     index: usize,
 }
 
 impl Default for Cursor {
+    /// Creates a cursor at position 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use your_crate::Cursor;
+    ///
+    /// let cursor = Cursor::default();
+    /// assert_eq!(cursor.get_index(), 0);
+    /// ```
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl Cursor {
-    /// Setter method that sets the index to 0 when the Cursor struct is instantiated
+    /// Creates a new cursor at position 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use your_crate::Cursor;
+    ///
+    /// let cursor = Cursor::new();
+    /// assert_eq!(cursor.get_index(), 0);
+    /// ```
     pub fn new() -> Self {
         Self { index: 0 }
     }
 
-    /// Getter method that returns the current index
+    /// Returns the current cursor position.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use your_crate::{PieceTable, Cursor};
+    ///
+    /// let mut cursor = Cursor::new();
+    /// let table = PieceTable::new("Hello".to_string());
+    ///
+    /// assert_eq!(cursor.get_index(), 0);
+    /// cursor.move_right(&table);
+    /// assert_eq!(cursor.get_index(), 1);
+    /// ```
     pub fn get_index(&self) -> usize {
         self.index
     }
 
-    /// Moves the cursor to the left by one character
-    /// Inbuilt guard is implemented to prevent the index from going out of bounds (to -1, which would be before the first character)
+    /// Moves the cursor one position to the left.
+    ///
+    /// Does nothing if the cursor is already at position 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use your_crate::{PieceTable, Cursor};
+    ///
+    /// let mut cursor = Cursor::new();
+    /// let table = PieceTable::new("Hello".to_string());
+    ///
+    /// cursor.move_right(&table);
+    /// cursor.move_right(&table);
+    /// assert_eq!(cursor.get_index(), 2);
+    ///
+    /// cursor.move_left();
+    /// assert_eq!(cursor.get_index(), 1);
+    ///
+    /// // Moving left at position 0 does nothing
+    /// let mut cursor_at_start = Cursor::new();
+    /// cursor_at_start.move_left();
+    /// assert_eq!(cursor_at_start.get_index(), 0);
+    /// ```
     pub fn move_left(&mut self) {
         if self.get_index() > 0 {
             self.index -= 1;
         }
     }
 
-    /// Moves the cursor to the right by one character, so long as the index is less than the sum of the indexes of all the pieces in the table
+    /// Moves the cursor one position to the right.
+    ///
+    /// Does nothing if the cursor is already at the end of the text.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use your_crate::{PieceTable, Cursor};
+    ///
+    /// let mut cursor = Cursor::new();
+    /// let table = PieceTable::new("Hi".to_string());
+    ///
+    /// cursor.move_right(&table);
+    /// assert_eq!(cursor.get_index(), 1);
+    ///
+    /// cursor.move_right(&table);
+    /// assert_eq!(cursor.get_index(), 2);
+    ///
+    /// // Moving right at the end does nothing
+    /// cursor.move_right(&table);
+    /// assert_eq!(cursor.get_index(), 2);
+    /// ```
     pub fn move_right(&mut self, table: &PieceTable) {
         if self.get_index() < table.len() {
             self.index += 1;
         }
     }
 
+    /// Inserts a character at the cursor position and advances the cursor.
+    ///
+    /// After insertion, the cursor is positioned after the newly inserted character.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use your_crate::{PieceTable, Cursor};
+    ///
+    /// let mut table = PieceTable::new("Hllo".to_string());
+    /// let mut cursor = Cursor::new();
+    ///
+    /// cursor.move_right(&table);
+    /// cursor.insert_char(&mut table, 'e');
+    ///
+    /// assert_eq!(table.to_string(), "Hello");
+    /// assert_eq!(cursor.get_index(), 2);
+    /// ```
+    ///
+    /// Multiple insertions:
+    ///
+    /// ```
+    /// use your_crate::{PieceTable, Cursor};
+    ///
+    /// let mut table = PieceTable::new(String::new());
+    /// let mut cursor = Cursor::new();
+    ///
+    /// cursor.insert_char(&mut table, 'H');
+    /// cursor.insert_char(&mut table, 'i');
+    /// cursor.insert_char(&mut table, '!');
+    ///
+    /// assert_eq!(table.to_string(), "Hi!");
+    /// assert_eq!(cursor.get_index(), 3);
+    /// ```
     pub fn insert_char(&mut self, table: &mut PieceTable, c: char) {
         table.insert(self.get_index(), &c.to_string());
         self.index += 1;
     }
 
+    /// Deletes the character before the cursor position (backspace behavior).
+    ///
+    /// After deletion, the cursor moves one position to the left.
+    /// Does nothing if the cursor is at position 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use your_crate::{PieceTable, Cursor};
+    ///
+    /// let mut table = PieceTable::new("Hello".to_string());
+    /// let mut cursor = Cursor::new();
+    ///
+    /// // Move to position 5 (after 'Hello')
+    /// for _ in 0..5 {
+    ///     cursor.move_right(&table);
+    /// }
+    ///
+    /// cursor.delete_char(&mut table);
+    /// assert_eq!(table.to_string(), "Hell");
+    /// assert_eq!(cursor.get_index(), 4);
+    /// ```
+    ///
+    /// Deleting at position 0:
+    ///
+    /// ```
+    /// use your_crate::{PieceTable, Cursor};
+    ///
+    /// let mut table = PieceTable::new("Hi".to_string());
+    /// let mut cursor = Cursor::new();
+    ///
+    /// // Cursor is at position 0, delete does nothing
+    /// cursor.delete_char(&mut table);
+    /// assert_eq!(table.to_string(), "Hi");
+    /// assert_eq!(cursor.get_index(), 0);
+    /// ```
     pub fn delete_char(&mut self, table: &mut PieceTable) {
         if self.get_index() > 0 {
-            // Always delete one character
             table.delete(self.get_index() - 1, 1);
             self.move_left();
         }
