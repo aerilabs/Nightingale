@@ -18,7 +18,7 @@
 - [x] Move cursor right
 - [x] Insert character at cursor
 - [x] Delete character before cursor
-- [ ] Prevent cursor from going out of bounds
+- [x] Prevent cursor from going out of bounds
 - [x] Write tests for cursor movement
 - [ ] Write tests for cursor editing
 

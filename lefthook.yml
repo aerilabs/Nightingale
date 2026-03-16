@@ -1,0 +1,30 @@
+# Lefthook configuration
+# Docs: https://lefthook.dev/configuration/
+
+pre-commit:
+  parallel: false
+  jobs:
+
+    - name: auto format
+      run: cargo fmt --all
+
+    - name: verify formatting
+      run: cargo fmt --all -- --check
+
+    - name: clippy
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+pre-push:
+  jobs:
+    - name: compile checks
+      run: cargo check
+
+commit-msg:
+  jobs:
+    - name: conventional commits check
+      run: |
+        if ! grep -qE "^(feat|fix|docs|style|refactor|test|chore|build|ci|perf|revert)(\(.+\))?: .+" "$1"; then
+          echo "❌ Commit message must follow Conventional Commits format"
+          echo "Example: feat(editor): add cursor movement"
+          exit 1
+        fi

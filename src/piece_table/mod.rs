@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Copy)]
 // The 2 buffers: one for original text, the other for added text
 enum BufferKind {
@@ -18,6 +20,19 @@ pub struct PieceTable {
     pieces: Vec<Piece>,
 }
 
+impl fmt::Display for PieceTable {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for piece in &self.pieces {
+            let source = match piece.buffer {
+                BufferKind::Original => &self.original,
+                BufferKind::Add => &self.add,
+            };
+            write!(f, "{}", &source[piece.start..(piece.start + piece.len)])?;
+        }
+        Ok(())
+    }
+}
+
 // Minimal Constructor for PieceTable
 impl PieceTable {
     pub fn new(text: String) -> Self {
@@ -31,21 +46,6 @@ impl PieceTable {
                 len,
             }],
         }
-    }
-
-    // Reconstruct the full text from the piece table
-    pub fn to_string(&self) -> String {
-        let mut result = String::new();
-
-        for piece in &self.pieces {
-            let source = match piece.buffer {
-                BufferKind::Original => &self.original,
-                BufferKind::Add => &self.add,
-            };
-            result.push_str(&source[piece.start..(piece.start + piece.len)]);
-        }
-
-        result
     }
 
     pub fn delete(&mut self, pos: usize, len: usize) {
@@ -116,6 +116,24 @@ impl PieceTable {
             }
             offset += piece.len;
         }
+    }
+
+    /// Walks through every piece, gets its length, and sums up all the piece lengths to get the total length of the text represented by the piece table
+    /// An alternative approach would be to use
+    /// ```rust
+    /// table.to_string().len()
+    /// ```
+    /// but that would be inefficient as it would require reconstructing the entire string just to get its length
+    pub fn len(&self) -> usize {
+        if !self.pieces.is_empty() {
+            self.pieces.iter().map(|p| p.len).sum()
+        } else {
+            0
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 
