@@ -55,9 +55,21 @@ impl PieceTable {
         let doc_len: usize = self.pieces.iter().map(|p| p.len).sum();
         if pos > doc_len {
             return Err(format!(
-                "insert position {pos} is out of bounds (document length is {doc_len})"
+                "delete position {pos} is out of bounds (document length is {doc_len})"
             ));
         }
+
+        if len == 0 {
+            return Ok(());
+        }
+
+        if len > doc_len - pos {
+            return Err(format!(
+                "delete range [{pos}, {}) is out of bounds (document length is {doc_len})",
+                pos + len
+            ));
+        }
+
         let mut offset = 0usize;
         for i in 0..self.pieces.len() {
             let piece = self.pieces[i];
@@ -95,12 +107,22 @@ impl PieceTable {
         Ok(())
     }
 
-    /// Inserts `text` at the given document position `pos`.
+    /// Inserts `text` at the given byte offset `pos`.
     ///
-    /// The document is represented as a list of pieces. Each piece points to a
-    /// slice of either the original buffer or the add buffer. To insert, we find
-    /// which piece contains `pos`, split it in two, and insert a new piece in
-    /// between pointing to the newly added text.
+    /// # Byte Offsets
+    /// `pos` is a **byte offset**, not a character index. For ASCII text these are the same, but for UTF-8 text they differ. For example, the character
+    /// `é` is 2 bytes, so inserting after it requires `pos = 2`, not `pos = 1`.
+    ///
+    /// Passing a `pos` that splits a multi-byte UTF-8 character will cause a panic when the document is read back, as it produces invalid UTF-8 slices.
+    /// Always ensure `pos` falls on a character boundary.
+    ///
+    /// To find a safe byte offset from a character index, use:
+    /// ```
+    /// let pos = text.char_indices().nth(char_index).map(|(i, _)| i).unwrap_or(text.len());
+    /// ```
+    ///
+    /// # Document Structure
+    /// The document is represented as a list of pieces. Each piece points to a slice of either the original buffer or the add buffer. To insert, we find which piece contains `pos`, split it in two, and insert a new piece in between pointing to the newly added text.
     pub fn insert(&mut self, pos: usize, text: &str) -> Result<(), String> {
         // Record where in the add buffer this new text will start, then append it.
         // We do this first so the add buffer is ready before we touch the pieces.
@@ -205,19 +227,19 @@ mod tests {
     #[test]
     fn insert_at_start() {
         let mut pt = PieceTable::new("ust".to_string());
-        pt.insert(0, "R").expect("Overflow");
+        pt.insert(0, "R").unwrap();
         assert_eq!(pt.to_string(), "Rust");
     }
     #[test]
     fn insert_at_middle() {
         let mut pt = PieceTable::new("Hi".to_string());
-        pt.insert(1, "o").expect("Overflow");
+        pt.insert(1, "o").unwrap();
         assert_eq!(pt.to_string(), "Hoi");
     }
     #[test]
     fn insert_at_end() {
         let mut pt = PieceTable::new("Rust".to_string());
-        pt.insert(4, "acean").expect("Overflow");
+        pt.insert(4, "acean").unwrap();
         assert_eq!(pt.to_string(), "Rustacean");
     }
 
