@@ -34,7 +34,11 @@ impl PieceTable {
     }
 
     // Reconstruct the full text from the piece table
-    /// Adds the source code to the initialized empty String
+    /// Reconstructs the current document text by concatenating the slices
+    /// referenced by the piece table.
+    ///
+    /// The `start` and `len` values stored in each piece are byte-based
+    /// indices into either the original or add buffer.
     pub fn to_string(&self) -> String {
         let mut result = String::new();
 
