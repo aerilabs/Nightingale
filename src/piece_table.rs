@@ -34,6 +34,7 @@ impl PieceTable {
     }
 
     // Reconstruct the full text from the piece table
+    /// Adds the source code to the initialized empty String
     pub fn to_string(&self) -> String {
         let mut result = String::new();
 
@@ -42,23 +43,34 @@ impl PieceTable {
                 BufferKind::Original => &self.original,
                 BufferKind::Add => &self.add,
             };
+
+            // Takes the range of the string in terms of the index, from the beginning to the end
             result.push_str(&source[piece.start..(piece.start + piece.len)]);
         }
 
         result
     }
 
-    pub fn delete(&mut self, pos: usize, len: usize) {
+    pub fn delete(&mut self, pos: usize, len: usize) -> Result<(), String> {
+        let doc_len: usize = self.pieces.iter().map(|p| p.len).sum();
+        if pos > doc_len {
+            return Err(format!(
+                "insert position {pos} is out of bounds (document length is {doc_len})"
+            ));
+        }
         let mut offset = 0usize;
         for i in 0..self.pieces.len() {
             let piece = self.pieces[i];
 
-            if pos >= offset && pos <= (offset + piece.len) {
+            if pos >= offset && pos < (offset + piece.len) {
                 let split = pos - offset;
 
                 // Guard to prevent overflow
                 if split + len > piece.len {
-                    break;
+                    return Err(format!(
+                        "invalid delete range: {pos} {len} exceeds bounds of current piece ({}, {offset})",
+                        piece.len
+                    ));
                 }
 
                 let left_piece = Piece {
@@ -80,42 +92,104 @@ impl PieceTable {
             }
             offset += piece.len;
         }
+        Ok(())
     }
 
-    pub fn insert(&mut self, pos: usize, text: &str) {
+    /// Inserts `text` at the given document position `pos`.
+    ///
+    /// The document is represented as a list of pieces. Each piece points to a
+    /// slice of either the original buffer or the add buffer. To insert, we find
+    /// which piece contains `pos`, split it in two, and insert a new piece in
+    /// between pointing to the newly added text.
+    pub fn insert(&mut self, pos: usize, text: &str) -> Result<(), String> {
+        // Record where in the add buffer this new text will start, then append it.
+        // We do this first so the add buffer is ready before we touch the pieces.
         let add_start = self.add.len();
-        self.add.push_str(text);
 
+        if text.is_empty() {
+            return Ok(());
+        } else {
+            self.add.push_str(text);
+        }
+
+        let doc_len: usize = self.pieces.iter().map(|p| p.len).sum();
+        if pos > doc_len {
+            return Err(format!(
+                "insert position {pos} is out of bounds (document length is {doc_len})"
+            ));
+        }
+
+        // `offset` tracks the cumulative document position at the start of each piece as we walk through the list. It starts at 0 (the beginning of the document) and advances by each piece's length each iteration.
         let mut offset = 0usize;
+
+        let mut inserted = false;
+
         for i in 0..self.pieces.len() {
             let piece = self.pieces[i];
-            if pos >= offset && pos <= (offset + piece.len) {
+
+            // Check if `pos` falls within this piece's document range.
+            // `offset` is where this piece starts, `offset + piece.len` is where it ends. If `pos` is outside this range, skip to the next piece.
+            // Add boundary check cases
+            if pos >= offset && pos < (offset + piece.len) {
+                // `split` is the local offset — how far into this specific piece the insertion point falls. Subtracting `offset` (the piece's document start position) from `pos` converts from a global document position to a position relative to this piece.
+                // Example: if this piece starts at document position 5 and we want to insert at document position 7, split = 7 - 5 = 2, meaning we cut 2 characters into this piece.
                 let split = pos - offset;
 
+                // Everything in the current piece before the insertion point.
+                // Starts at the same place as the original piece, but is shortened to `split` characters.
                 let left_piece = Piece {
                     buffer: piece.buffer,
                     start: piece.start,
                     len: split,
                 };
+
+                // The newly inserted text, pointing to what we just appended to the add buffer.
                 let new_piece = Piece {
                     buffer: BufferKind::Add,
                     start: add_start,
                     len: text.len(),
                 };
+
+                // Everything in the current piece after the insertion point.
+                // Its start is shifted forward by `split` to skip past the left portion, and its length is reduced accordingly.
                 let right_piece = Piece {
                     buffer: piece.buffer,
                     start: piece.start + split,
                     len: piece.len - split,
                 };
 
+                // Replace the original piece with the three new pieces in order: [left_piece] [new_piece] [right_piece]
+                // We remove the original first, then insert in reverse order at the same index so they end up in the correct sequence.
+
                 self.pieces.remove(i);
-                self.pieces.insert(i, right_piece);
+
+                // Prevent addition of empty string pieces. If split == 0, len is 0, skip
+                // Insert in reverse order at index i so the final sequence is [left_piece?, new_piece, right_piece?]
+                if split < piece.len {
+                    self.pieces.insert(i, right_piece);
+                }
                 self.pieces.insert(i, new_piece);
-                self.pieces.insert(i, left_piece);
+                if split > 0 {
+                    self.pieces.insert(i, left_piece);
+                }
+                inserted = true;
                 break;
             }
+
+            // `pos` was not in this piece, so advance `offset` by this piece's length to move the window forward to the next piece.
             offset += piece.len;
         }
+
+        // If no piece matched, `pos` is at or beyond the end of the document.
+        // Simply push a new piece pointing to the added text — this handles the append case.
+        if !inserted {
+            self.pieces.push(Piece {
+                buffer: BufferKind::Add,
+                start: add_start,
+                len: text.len(),
+            })
+        }
+        Ok(())
     }
 }
 
@@ -131,40 +205,40 @@ mod tests {
     #[test]
     fn insert_at_start() {
         let mut pt = PieceTable::new("ust".to_string());
-        pt.insert(0, "R");
+        pt.insert(0, "R").expect("Overflow");
         assert_eq!(pt.to_string(), "Rust");
     }
     #[test]
     fn insert_at_middle() {
         let mut pt = PieceTable::new("Hi".to_string());
-        pt.insert(1, "o");
+        pt.insert(1, "o").expect("Overflow");
         assert_eq!(pt.to_string(), "Hoi");
     }
     #[test]
     fn insert_at_end() {
         let mut pt = PieceTable::new("Rust".to_string());
-        pt.insert(4, "acean");
+        pt.insert(4, "acean").expect("Overflow");
         assert_eq!(pt.to_string(), "Rustacean");
     }
 
     #[test]
     fn delete_from_start() {
         let mut pt = PieceTable::new("Rust".to_string());
-        pt.delete(0, 4);
+        pt.delete(0, 4).unwrap();
         assert_eq!(pt.to_string(), "");
     }
 
     #[test]
     fn delete_from_middle() {
         let mut pt = PieceTable::new("Rust".to_string());
-        pt.delete(1, 1);
+        pt.delete(1, 1).unwrap();
         assert_eq!(pt.to_string(), "Rst");
     }
 
     #[test]
     fn delete_from_end() {
         let mut pt = PieceTable::new("Rust".to_string());
-        pt.delete(2, 1);
+        pt.delete(2, 1).unwrap();
         assert_eq!(pt.to_string(), "Rut");
     }
 }
