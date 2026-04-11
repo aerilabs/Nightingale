@@ -39,8 +39,8 @@ fn test_insert_char() {
     assert_eq!(cursor.get_index(), 0);
 
     // Insert 'H' at index 0
-    cursor.insert_char(&mut table, 'H');
-    cursor.insert_char(&mut table, 'i');
+    cursor.insert_char(&mut table, 'H').unwrap();
+    cursor.insert_char(&mut table, 'i').unwrap();
 
     assert_eq!(table.to_string(), "Hi");
     assert_eq!(cursor.get_index(), 2);
@@ -57,8 +57,8 @@ fn test_delete_char() {
     assert_eq!(cursor.get_index(), 5);
 
     // Insert 'H' at index 0
-    cursor.delete_char(&mut table);
-    cursor.delete_char(&mut table);
+    cursor.delete_char(&mut table).unwrap();
+    cursor.delete_char(&mut table).unwrap();
 
     assert_eq!(table.to_string(), "Hel");
     assert_eq!(cursor.get_index(), 3);
@@ -74,16 +74,16 @@ fn test_insert_then_delete() {
 
     cursor.index = 15;
 
-    cursor.insert_char(&mut table, 'p');
-    cursor.insert_char(&mut table, 'h');
+    cursor.insert_char(&mut table, 'p').unwrap();
+    cursor.insert_char(&mut table, 'h').unwrap();
 
     assert_eq!(table.to_string(), "My name is Joseph");
     assert_eq!(cursor.get_index(), 17);
 
     cursor.index = 10;
 
-    cursor.delete_char(&mut table);
-    cursor.delete_char(&mut table);
+    cursor.delete_char(&mut table).unwrap();
+    cursor.delete_char(&mut table).unwrap();
 
     assert_eq!(table.to_string(), "My name  Joseph");
     assert_eq!(cursor.get_index(), 8);

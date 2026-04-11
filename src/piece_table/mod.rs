@@ -107,17 +107,39 @@ impl PieceTable {
     /// table.delete(5, 7);  // Remove ", world"
     /// assert_eq!(table.to_string(), "Hello!");
     /// ```
-    pub fn delete(&mut self, pos: usize, len: usize) {
+    pub fn delete(&mut self, pos: usize, len: usize) -> Result<(), String> {
+        let doc_len = self.pieces.iter().map(|p| p.len).sum();
+
+        if pos > doc_len {
+            return Err(format!(
+                "delete position {pos} is out of bounds (document length is {doc_len})"
+            ));
+        }
+
+        if len == 0 {
+            return Ok(());
+        }
+
+        if len > doc_len - pos {
+            return Err(format!(
+                "delete range [{pos}, {}) is out of bounds (document length is {doc_len})",
+                pos + len
+            ));
+        }
+
         let mut offset = 0usize;
         for i in 0..self.pieces.len() {
             let piece = self.pieces[i];
 
-            if pos >= offset && pos <= (offset + piece.len) {
+            if pos >= offset && pos < (offset + piece.len) {
                 let split = pos - offset;
 
                 // Guard to prevent overflow
                 if split + len > piece.len {
-                    break;
+                    return Err(format!(
+                        "invalid delete range: {pos} {len} exceeds bounds of current piece ({}, {offset})",
+                        piece.len
+                    ));
                 }
 
                 let left_piece = Piece {
@@ -139,6 +161,7 @@ impl PieceTable {
             }
             offset += piece.len;
         }
+        Ok(())
     }
 
     /// Inserts text at the specified position.
@@ -168,14 +191,30 @@ impl PieceTable {
     /// table.insert(11, "Middle. ");
     /// assert_eq!(table.to_string(), "Beginning. Middle. The end");
     /// ```
-    pub fn insert(&mut self, pos: usize, text: &str) {
+    pub fn insert(&mut self, pos: usize, text: &str) -> Result<(), String> {
         let add_start = self.add.len();
-        self.add.push_str(text);
+
+        if text.is_empty() {
+            return Err("Invalid! Text is empty".to_owned());
+        } else {
+            self.add.push_str(text);
+        }
+
+        let doc_len: usize = self.pieces.iter().map(|p| p.len).sum();
+        if pos > doc_len {
+            return Err(format!(
+                "insert position {pos} is out of bounds (document length is {doc_len})"
+            ));
+        }
 
         let mut offset = 0usize;
+
+        let mut inserted = false;
+
         for i in 0..self.pieces.len() {
             let piece = self.pieces[i];
-            if pos >= offset && pos <= (offset + piece.len) {
+
+            if pos >= offset && pos < (offset + piece.len) {
                 let split = pos - offset;
 
                 let left_piece = Piece {
@@ -195,13 +234,28 @@ impl PieceTable {
                 };
 
                 self.pieces.remove(i);
-                self.pieces.insert(i, right_piece);
+
+                if split < piece.len {
+                    self.pieces.insert(i, right_piece);
+                }
                 self.pieces.insert(i, new_piece);
-                self.pieces.insert(i, left_piece);
+
+                if split > 0 {
+                    self.pieces.insert(i, left_piece);
+                }
+                inserted = true;
                 break;
             }
             offset += piece.len;
         }
+        if !inserted {
+            self.pieces.push(Piece {
+                buffer: BufferKind::Add,
+                start: add_start,
+                len: text.len(),
+            })
+        }
+        Ok(())
     }
 
     /// Returns the total length of the text in bytes.

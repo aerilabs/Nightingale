@@ -165,9 +165,10 @@ impl Cursor {
     /// assert_eq!(table.to_string(), "Hi!");
     /// assert_eq!(cursor.get_index(), 3);
     /// ```
-    pub fn insert_char(&mut self, table: &mut PieceTable, c: char) {
-        table.insert(self.get_index(), &c.to_string());
+    pub fn insert_char(&mut self, table: &mut PieceTable, c: char) -> Result<&str, String> {
+        table.insert(self.get_index(), &c.to_string())?;
         self.index += 1;
+        Ok("Character inserted successfully")
     }
 
     /// Deletes the character before the cursor position (backspace behavior).
@@ -206,11 +207,12 @@ impl Cursor {
     /// assert_eq!(table.to_string(), "Hi");
     /// assert_eq!(cursor.get_index(), 0);
     /// ```
-    pub fn delete_char(&mut self, table: &mut PieceTable) {
+    pub fn delete_char(&mut self, table: &mut PieceTable) -> Result<&str, String> {
         if self.get_index() > 0 {
-            table.delete(self.get_index() - 1, 1);
+            table.delete(self.get_index() - 1, 1)?;
             self.move_left();
         }
+        Ok("No character to delete at position 0")
     }
 }
 
