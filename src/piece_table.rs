@@ -158,11 +158,11 @@ impl PieceTable {
             // Add boundary check cases
             if pos >= offset && pos < (offset + piece.len) {
                 // `split` is the local offset — how far into this specific piece the insertion point falls. Subtracting `offset` (the piece's document start position) from `pos` converts from a global document position to a position relative to this piece.
-                // Example: if this piece starts at document position 5 and we want to insert at document position 7, split = 7 - 5 = 2, meaning we cut 2 characters into this piece.
+                // Example: if this piece starts at document position 5 and we want to insert at document position 7, split = 7 - 5 = 2, meaning we cut 2 bytes into this piece.
                 let split = pos - offset;
 
                 // Everything in the current piece before the insertion point.
-                // Starts at the same place as the original piece, but is shortened to `split` characters.
+                // Starts at the same place as the original piece, but is shortened to `split` bytes.
                 let left_piece = Piece {
                     buffer: piece.buffer,
                     start: piece.start,
