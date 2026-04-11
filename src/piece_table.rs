@@ -133,7 +133,7 @@ impl PieceTable {
         let add_start = self.add.len();
 
         if text.is_empty() {
-            return Ok(());
+            return Err(format!("Invalid! Text is empty"));
         } else {
             self.add.push_str(text);
         }
