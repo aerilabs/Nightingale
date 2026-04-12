@@ -86,11 +86,12 @@ Moves the cursor one character to the right (towards the document end).
 ### Example
 
 ```
-Text: "café"
-Positions: 0 1 2 3 4
+Text: "café" (5 bytes: c a f é[0xC3 0xA9])
+Positions: 0 1 2 3 4 5
+Valid UTF-8 boundaries: 0 1 2 3 5
 
-Cursor at 0 (c) → move_right() → steps to 1, 2 (both valid), lands at 1 (a)
-Cursor at 2 (f) → move_right() → steps to 3, 4 (4 invalid), lands at 4 (end)
+Cursor at 0 (before 'c') → move_right() → steps to 1, lands at 1 (before 'a')
+Cursor at 3 (before 'é') → move_right() → steps to 4 (invalid), then 5, lands at 5 (end)
 ```
 
 ---
