@@ -297,7 +297,8 @@ impl PieceTable {
 
     /// Returns the total length of the text in bytes.
     ///
-    /// This is an O(1) operation where 1 is the number of pieces.
+    /// This is a true O(1) operation because the length is cached and does
+    /// not depend on the number of pieces.
     ///
     /// # Examples
     ///
