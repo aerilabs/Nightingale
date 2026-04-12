@@ -27,7 +27,10 @@ fn test_cursor_movement() {
     cursor.move_right(&table);
     cursor.move_right(&table);
     cursor.move_right(&table);
-    assert_eq!(cursor.get_index(), 3);
+    cursor.move_right(&table);
+    cursor.move_right(&table);
+    cursor.move_right(&table);
+    assert_eq!(cursor.get_index(), 5);
 }
 
 #[test]

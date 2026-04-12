@@ -113,12 +113,12 @@ impl PieceTable {
     /// For ASCII text, byte offsets and character indices are the same. For UTF-8
     /// text they differ — for example `é` is 2 bytes, so deleting it requires `len = 2`.
     ///
-    /// Passing a `pos` or `len` that splits a multi-byte character will produce
-    /// invalid UTF-8 and panic when the document is read back. Always ensure both
-    /// `pos` and `pos + len` fall on character boundaries.
+    /// `delete` validates that both `pos` and `pos + len` fall on UTF-8 character
+    /// boundaries. If either boundary would split a multi-byte character, the method
+    /// returns an error and leaves the piece table unchanged.
     ///
     /// To find a safe byte length from a character count, use:
-    /// ```
+    /// ```text
     /// let len = text[byte_start..].char_indices().nth(char_count).map(|(i, _)| i).unwrap_or(text.len() - byte_start);
     /// ```
     ///

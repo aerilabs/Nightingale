@@ -92,7 +92,7 @@ impl Cursor {
     /// cursor.move_right(&table);
     /// assert_eq!(cursor.get_index(), 2);
     ///
-    /// cursor.move_left();
+    /// cursor.move_left(&table);
     /// assert_eq!(cursor.get_index(), 1);
     ///
     /// // Moving left at position 0 does nothing
