@@ -20,7 +20,7 @@
 - [x] Delete character before cursor
 - [x] Prevent cursor from going out of bounds
 - [x] Write tests for cursor movement
-- [ ] Write tests for cursor editing
+- [x] Write tests for cursor editing
 
 ## Rules (Do Not Break)
 
@@ -42,10 +42,10 @@ Phase 3 Checklist (Insert & Delete)
     - [x] Splits pieces at deletion range
     - [x] Removes pieces or trims them
     - [x] Keeps original and add buffers immutable
-- [ ] Write unit tests for `insert`:
-    - [ ] Insert at start
-    - [ ] Insert in middle
-    - [ ] Insert at end
+- [x] Write unit tests for `insert`:
+    - [x] Insert at start
+    - [x] Insert in middle
+    - [x] Insert at end
 - [ ] Write unit tests for `delete`:
     - [x] Delete single character
     - [ ] Delete range across pieces

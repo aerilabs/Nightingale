@@ -4,7 +4,6 @@
 pre-commit:
   parallel: false
   jobs:
-
     - name: auto format
       run: cargo fmt --all
 
@@ -22,9 +21,4 @@ pre-push:
 commit-msg:
   jobs:
     - name: conventional commits check
-      run: |
-        if ! grep -qE "^(feat|fix|docs|style|refactor|test|chore|build|ci|perf|revert)(\(.+\))?: .+" "$1"; then
-          echo "❌ Commit message must follow Conventional Commits format"
-          echo "Example: feat(editor): add cursor movement"
-          exit 1
-        fi
+      run: powershell -ExecutionPolicy Bypass -File ./.scripts/validate-commit-msg.ps1 "{1}"

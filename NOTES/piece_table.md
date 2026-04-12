@@ -81,7 +81,7 @@ for piece in &self.pieces {
     };
     let end = piece.start.checked_add(piece.len).ok_or(fmt::Error)?;
     let segment = source.get(piece.start..end).ok_or(fmt::Error)?;
-    write!(f, "{}"segment)?;
+    write!(f, "{}", segment)?;
 }
 ```
 

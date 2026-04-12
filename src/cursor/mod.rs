@@ -97,7 +97,7 @@ impl Cursor {
     ///
     /// // Moving left at position 0 does nothing
     /// let mut cursor_at_start = Cursor::new();
-    /// cursor_at_start.move_left();
+    /// cursor_at_start.move_left(&table);
     /// assert_eq!(cursor_at_start.get_index(), 0);
     /// ```
     pub fn move_left(&mut self, table: &PieceTable) {

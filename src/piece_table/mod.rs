@@ -24,7 +24,7 @@ struct Piece {
 /// # Examples
 ///
 /// ```
-/// use piece_table::PieceTable;
+/// use nightingale::PieceTable;
 ///
 /// let mut table = PieceTable::new("Hello, world!".to_string());
 /// table.insert(7, "Rust ");
@@ -67,7 +67,7 @@ impl Default for PieceTable {
     /// # Examples
     ///
     /// ```
-    /// use piece_table::PieceTable;
+    /// use nightingale::PieceTable;
     ///
     /// let table = PieceTable::default();
     /// assert!(table.is_empty());
@@ -83,7 +83,7 @@ impl PieceTable {
     /// # Examples
     ///
     /// ```
-    /// use piece_table::PieceTable;
+    /// use nightingale::PieceTable;
     ///
     /// let table = PieceTable::new("Initial text".to_string());
     /// assert_eq!(table.to_string(), "Initial text");
@@ -125,7 +125,7 @@ impl PieceTable {
     /// # Examples
     ///
     /// ```
-    /// use piece_table::PieceTable;
+    /// use nightingale::PieceTable;
     ///
     /// let mut table = PieceTable::new("Hello, world!".to_string());
     /// table.delete(5, 7);  // Remove ", world" (7 bytes, all ASCII)
@@ -193,13 +193,13 @@ impl PieceTable {
     ///
     /// # Arguments
     ///
-    /// * `pos` - The position where text should be inserted
+    /// * `pos` - The byte index where text should be inserted. This must be a valid UTF-8 character boundary within the current document.
     /// * `text` - The text to insert
     ///
     /// # Examples
     ///
     /// ```
-    /// use piece_table::PieceTable;
+    /// use nightingale::PieceTable;
     ///
     /// let mut table = PieceTable::new("Hello!".to_string());
     /// table.insert(5, ", world");
@@ -209,7 +209,7 @@ impl PieceTable {
     /// Multiple insertions:
     ///
     /// ```
-    /// use piece_table::PieceTable;
+    /// use nightingale::PieceTable;
     ///
     /// let mut table = PieceTable::new("The end".to_string());
     /// table.insert(0, "Beginning. ");
@@ -316,7 +316,7 @@ impl PieceTable {
     /// # Examples
     ///
     /// ```
-    /// use piece_table::PieceTable;
+    /// use nightingale::PieceTable;
     ///
     /// let empty = PieceTable::new(String::new());
     /// assert!(empty.is_empty());
