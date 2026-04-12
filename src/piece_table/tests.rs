@@ -46,3 +46,18 @@ fn delete_from_end() {
     pt.delete(2, 1).unwrap();
     assert_eq!(pt.to_string(), "Rut");
 }
+
+#[test]
+fn delete_multibyte_char_at_utf8_boundaries() {
+    let mut pt = PieceTable::new("Héllo".to_string());
+    pt.delete(1, 2).unwrap();
+    assert_eq!(pt.to_string(), "Hllo");
+}
+
+#[test]
+fn delete_rejects_ranges_that_split_multibyte_chars() {
+    let mut pt = PieceTable::new("Héllo".to_string());
+    assert!(pt.delete(1, 1).is_err());
+    assert!(pt.delete(2, 1).is_err());
+    assert_eq!(pt.to_string(), "Héllo");
+}
