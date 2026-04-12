@@ -8,7 +8,7 @@ use crate::piece_table::PieceTable;
 /// # Examples
 ///
 /// ```
-/// use your_crate::{PieceTable, Cursor};
+/// use nightingale::{PieceTable, Cursor};
 ///
 /// let mut table = PieceTable::new("Hello".to_string());
 /// let mut cursor = Cursor::new();
@@ -30,7 +30,7 @@ impl Default for Cursor {
     /// # Examples
     ///
     /// ```
-    /// use your_crate::Cursor;
+    /// use nightingale::cursor::Cursor;
     ///
     /// let cursor = Cursor::default();
     /// assert_eq!(cursor.get_index(), 0);
@@ -46,7 +46,7 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use your_crate::Cursor;
+    /// use nightingale::cursor::Cursor;
     ///
     /// let cursor = Cursor::new();
     /// assert_eq!(cursor.get_index(), 0);
@@ -60,7 +60,7 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use your_crate::{PieceTable, Cursor};
+    /// use nightingale::{PieceTable, Cursor};
     ///
     /// let mut cursor = Cursor::new();
     /// let table = PieceTable::new("Hello".to_string());
@@ -80,7 +80,7 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use your_crate::{PieceTable, Cursor};
+    /// use nightingale::{PieceTable, Cursor};
     ///
     /// let mut cursor = Cursor::new();
     /// let table = PieceTable::new("Hello".to_string());
@@ -110,7 +110,7 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use your_crate::{PieceTable, Cursor};
+    /// use nightingale::{PieceTable, Cursor};
     ///
     /// let mut cursor = Cursor::new();
     /// let table = PieceTable::new("Hi".to_string());
@@ -138,7 +138,7 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use your_crate::{PieceTable, Cursor};
+    /// use nightingale::{PieceTable, Cursor};
     ///
     /// let mut table = PieceTable::new("Hllo".to_string());
     /// let mut cursor = Cursor::new();
@@ -153,7 +153,7 @@ impl Cursor {
     /// Multiple insertions:
     ///
     /// ```
-    /// use your_crate::{PieceTable, Cursor};
+    /// use nightingale::{PieceTable, Cursor};
     ///
     /// let mut table = PieceTable::new(String::new());
     /// let mut cursor = Cursor::new();
@@ -165,10 +165,11 @@ impl Cursor {
     /// assert_eq!(table.to_string(), "Hi!");
     /// assert_eq!(cursor.get_index(), 3);
     /// ```
-    pub fn insert_char(&mut self, table: &mut PieceTable, c: char) -> Result<&str, String> {
+    pub fn insert_char(&mut self, table: &mut PieceTable, c: char) -> Result<(), String> {
         table.insert(self.get_index(), &c.to_string())?;
-        self.index += 1;
-        Ok("Character inserted successfully")
+        // Ensure byte length is synchronized, regarled of format: ASCII or UTF-8, reference: https://github.com/aerilabs/Nightingale/pull/7#discussion_r3068757907
+        self.index += c.len_utf8();
+        Ok(())
     }
 
     /// Deletes the character before the cursor position (backspace behavior).
@@ -179,7 +180,7 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use your_crate::{PieceTable, Cursor};
+    /// use nightingale::{PieceTable, Cursor};
     ///
     /// let mut table = PieceTable::new("Hello".to_string());
     /// let mut cursor = Cursor::new();
@@ -197,7 +198,7 @@ impl Cursor {
     /// Deleting at position 0:
     ///
     /// ```
-    /// use your_crate::{PieceTable, Cursor};
+    /// use nightingale::{PieceTable, Cursor};
     ///
     /// let mut table = PieceTable::new("Hi".to_string());
     /// let mut cursor = Cursor::new();
@@ -207,12 +208,13 @@ impl Cursor {
     /// assert_eq!(table.to_string(), "Hi");
     /// assert_eq!(cursor.get_index(), 0);
     /// ```
-    pub fn delete_char(&mut self, table: &mut PieceTable) -> Result<&str, String> {
+    pub fn delete_char(&mut self, table: &mut PieceTable) -> Result<bool, String> {
         if self.get_index() > 0 {
             table.delete(self.get_index() - 1, 1)?;
             self.move_left();
+            return Ok(true);
         }
-        Ok("No character to delete at position 0")
+        Ok(false)
     }
 }
 
