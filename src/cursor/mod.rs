@@ -107,9 +107,16 @@ impl Cursor {
 
         // Reconstruct the full document string to ensure we can check character boundaries correctly
         let doc = table.to_string();
+        let current_index = self.index.min(doc.len());
 
-        // Walk backwards one byte at a time from current position until we land on a valid character boundary
-        let mut new_index = self.index - 1;
+        if current_index == 0 {
+            self.index = 0;
+            return;
+        }
+
+        // Walk backwards one byte at a time from the current in-bounds position
+        // until we land on a valid character boundary.
+        let mut new_index = current_index - 1;
         while !doc.is_char_boundary(new_index) {
             new_index -= 1;
         }
