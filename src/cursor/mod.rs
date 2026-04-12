@@ -14,7 +14,7 @@ use crate::piece_table::PieceTable;
 /// let mut table = PieceTable::new("Hello".to_string());
 /// let mut cursor = Cursor::new();
 ///
-/// // Move to end and insert text
+/// // Move right twice and insert text
 /// cursor.move_right(&table);
 /// cursor.move_right(&table);
 /// cursor.insert_char(&mut table, '!');
