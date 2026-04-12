@@ -56,7 +56,7 @@ fn test_delete_char() {
     // Assert that the cursor is at 5
     assert_eq!(cursor.get_index(), 5);
 
-    // Insert 'H' at index 0
+    // Delete two characters starting from the end of the text
     cursor.delete_char(&mut table).unwrap();
     cursor.delete_char(&mut table).unwrap();
 
