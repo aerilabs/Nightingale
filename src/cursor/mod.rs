@@ -167,7 +167,7 @@ impl Cursor {
     /// ```
     pub fn insert_char(&mut self, table: &mut PieceTable, c: char) -> Result<(), String> {
         table.insert(self.get_index(), &c.to_string())?;
-        // Ensure byte length is synchronized, regarled of format: ASCII or UTF-8, reference: https://github.com/aerilabs/Nightingale/pull/7#discussion_r3068757907
+        // Ensure byte length is synchronized, regardless of format: ASCII or UTF-8, reference: https://github.com/aerilabs/Nightingale/pull/7#discussion_r3068757907
         self.index += c.len_utf8();
         Ok(())
     }
