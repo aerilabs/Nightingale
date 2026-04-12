@@ -15,12 +15,12 @@ fn test_cursor_movement() {
     assert_eq!(cursor.get_index(), 2);
 
     // move left
-    cursor.move_left();
+    cursor.move_left(&table);
     assert_eq!(cursor.get_index(), 1);
 
     // cannot move left past 0
-    cursor.move_left();
-    cursor.move_left();
+    cursor.move_left(&table);
+    cursor.move_left(&table);
     assert_eq!(cursor.get_index(), 0);
 
     // cannot move right past max

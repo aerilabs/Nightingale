@@ -8,7 +8,8 @@ use crate::piece_table::PieceTable;
 /// # Examples
 ///
 /// ```
-/// use nightingale::{PieceTable, Cursor};
+/// use nightingale::cursor::Cursor;
+/// use nightingale::piece_table::PieceTable;
 ///
 /// let mut table = PieceTable::new("Hello".to_string());
 /// let mut cursor = Cursor::new();
@@ -60,7 +61,8 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use nightingale::{PieceTable, Cursor};
+    /// use nightingale::cursor::Cursor;
+    /// use nightingale::piece_table::PieceTable;
     ///
     /// let mut cursor = Cursor::new();
     /// let table = PieceTable::new("Hello".to_string());
@@ -80,7 +82,8 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use nightingale::{PieceTable, Cursor};
+    /// use nightingale::cursor::Cursor;
+    /// use nightingale::piece_table::PieceTable;
     ///
     /// let mut cursor = Cursor::new();
     /// let table = PieceTable::new("Hello".to_string());
@@ -97,10 +100,21 @@ impl Cursor {
     /// cursor_at_start.move_left();
     /// assert_eq!(cursor_at_start.get_index(), 0);
     /// ```
-    pub fn move_left(&mut self) {
-        if self.get_index() > 0 {
-            self.index -= 1;
+    pub fn move_left(&mut self, table: &PieceTable) {
+        if self.get_index() == 0 {
+            return;
         }
+
+        // Reconstruct the full document string to ensure we can check character boundaries correctly
+        let doc = table.to_string();
+
+        // Walk backwards one byte at a time from current position until we land on a valid character boundary
+        let mut new_index = self.index - 1;
+        while !doc.is_char_boundary(new_index) {
+            new_index -= 1;
+        }
+
+        self.index = new_index;
     }
 
     /// Moves the cursor one position to the right.
@@ -110,7 +124,8 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use nightingale::{PieceTable, Cursor};
+    /// use nightingale::cursor::Cursor;
+    /// use nightingale::piece_table::PieceTable;
     ///
     /// let mut cursor = Cursor::new();
     /// let table = PieceTable::new("Hi".to_string());
@@ -126,9 +141,25 @@ impl Cursor {
     /// assert_eq!(cursor.get_index(), 2);
     /// ```
     pub fn move_right(&mut self, table: &PieceTable) {
-        if self.get_index() < table.len() {
-            self.index += 1;
+        // Reconstruct the full document string to ensure we can check character boundaries correctly
+        let doc = table.to_string();
+
+        // If already at or past the end, do nothing.
+        if self.index >= doc.len() {
+            return;
         }
+
+        // Move forward one byte and advance until we hit a valid character boundary.
+        let mut new_index = self.index + 1;
+        while new_index <= doc.len() && !doc.is_char_boundary(new_index) {
+            new_index += 1;
+        }
+
+        if new_index > doc.len() {
+            new_index = doc.len();
+        }
+
+        self.index = new_index;
     }
 
     /// Inserts a character at the cursor position and advances the cursor.
@@ -138,7 +169,8 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use nightingale::{PieceTable, Cursor};
+    /// use nightingale::cursor::Cursor;
+    /// use nightingale::piece_table::PieceTable;
     ///
     /// let mut table = PieceTable::new("Hllo".to_string());
     /// let mut cursor = Cursor::new();
@@ -153,7 +185,8 @@ impl Cursor {
     /// Multiple insertions:
     ///
     /// ```
-    /// use nightingale::{PieceTable, Cursor};
+    /// use nightingale::cursor::Cursor;
+    /// use nightingale::piece_table::PieceTable;
     ///
     /// let mut table = PieceTable::new(String::new());
     /// let mut cursor = Cursor::new();
@@ -166,7 +199,12 @@ impl Cursor {
     /// assert_eq!(cursor.get_index(), 3);
     /// ```
     pub fn insert_char(&mut self, table: &mut PieceTable, c: char) -> Result<(), String> {
-        table.insert(self.get_index(), &c.to_string())?;
+        let mut buf = [0; 4]; // a tiny fixed array on the STACK, not heap, to hold the UTF-8 bytes of the character
+
+        let encoded = c.encode_utf8(&mut buf); // write the char's bytes into it
+
+        table.insert(self.get_index(), encoded)?; // encoded is just a &str pointing to buf, so this is efficient and doesn't require heap allocation for the character
+
         // Ensure byte length is synchronized, regardless of format: ASCII or UTF-8, reference: https://github.com/aerilabs/Nightingale/pull/7#discussion_r3068757907
         self.index += c.len_utf8();
         Ok(())
@@ -180,7 +218,8 @@ impl Cursor {
     /// # Examples
     ///
     /// ```
-    /// use nightingale::{PieceTable, Cursor};
+    /// use nightingale::cursor::Cursor;
+    /// use nightingale::piece_table::PieceTable;
     ///
     /// let mut table = PieceTable::new("Hello".to_string());
     /// let mut cursor = Cursor::new();
@@ -198,7 +237,8 @@ impl Cursor {
     /// Deleting at position 0:
     ///
     /// ```
-    /// use nightingale::{PieceTable, Cursor};
+    /// use nightingale::cursor::Cursor;
+    /// use nightingale::piece_table::PieceTable;
     ///
     /// let mut table = PieceTable::new("Hi".to_string());
     /// let mut cursor = Cursor::new();
@@ -209,12 +249,35 @@ impl Cursor {
     /// assert_eq!(cursor.get_index(), 0);
     /// ```
     pub fn delete_char(&mut self, table: &mut PieceTable) -> Result<bool, String> {
-        if self.get_index() > 0 {
-            table.delete(self.get_index() - 1, 1)?;
-            self.move_left();
-            return Ok(true);
+        if self.get_index() == 0 {
+            return Ok(false);
         }
-        Ok(false)
+
+        let text = table.to_string();
+        let cursor_index = self.get_index();
+
+        if cursor_index > text.len() {
+            return Err(format!(
+                "Cursor index {cursor_index} is out of bounds for text length {}",
+                text.len()
+            ));
+        }
+
+        if !text.is_char_boundary(cursor_index) {
+            return Err(format!(
+                "Cursor index {cursor_index} is not on a valid UTF-8 character boundary in the text"
+            ));
+        }
+
+        let previous_index = text[..cursor_index] // slice the document UP TO the cursor
+            .char_indices() // iterate over (byte_index, char) pairs
+            .last() // get the last character before cursor
+            .map(|(index, _)| index) // extract just the byte index
+            .ok_or_else(|| "No previous character found".to_string())?;
+
+        table.delete(previous_index, cursor_index - previous_index)?;
+        self.index = previous_index;
+        Ok(true)
     }
 }
 

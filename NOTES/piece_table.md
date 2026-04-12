@@ -53,13 +53,25 @@ If the initial string is empty, the piece has `len: 0`. This is harmless — sli
 
 ---
 
-## to_string()
+## len() and is_empty()
+
+```rust
+pub fn len(&self) -> usize
+pub fn is_empty(&self) -> bool
+```
+
+Returns the cached document byte length or boolean emptiness. These are O(1) operations because the length is cached in `self.len`, not recalculated from pieces.
+
+---
+
+## to_string() and Display trait
 
 ```rust
 pub fn to_string(&self) -> String
+fn fmt(&self, f: &mut Formatter) -> fmt::Result  // Display impl
 ```
 
-Reconstructs the full text by walking all pieces in order and appending each slice to a result string.
+Reconstructs the full text by walking all pieces in order and appending each slice to a result string. Uses safe slicing with `checked_add` and `str::get()` to prevent panics from overflow or invalid UTF-8 boundaries:
 
 ```rust
 for piece in &self.pieces {
@@ -67,33 +79,42 @@ for piece in &self.pieces {
         Original => &self.original,
         Add      => &self.add,
     };
-    result.push_str(&source[piece.start..piece.start + piece.len]);
+    let end = piece.start.checked_add(piece.len).ok_or(fmt::Error)?;
+    let segment = source.get(piece.start..end).ok_or(fmt::Error)?;
+    write!(f, "{}"segment)?;
 }
 ```
 
-**Note:** If `piece.start + piece.len` exceeds the buffer length, Rust will panic at the slice indexing line. There is currently no bounds guard — pieces must always be constructed correctly.
+**Safety:** Uses `checked_add` to detect overflow and `str::get()` to safely handle out-of-bounds or multi-byte char boundaries.
 
 ---
 
 ## Insert
 
 ```rust
-pub fn insert(&mut self, pos: usize, text: &str)
+pub fn insert(&mut self, pos: usize, text: &str) -> Result<(), String>
 ```
 
-Inserts `text` at byte position `pos` in the document.
+Inserts `text` at byte position `pos` in the document. Returns an error if validation fails; the piece table is never left in an inconsistent state.
 
-### How it works
+### Validation (before mutation)
 
-The add buffer is append-only, so the new text is appended to it first. Then the piece containing `pos` is split into three pieces: the left half, the new text, and the right half. The original buffer is never touched.
+1. **Empty check:** Return error if `text` is empty
+2. **Bounds check:** Return error if `pos > self.len` (cached document length)
+3. **UTF-8 boundary check:** Reconstruct the full document and verify `pos` is on a char boundary using `doc.is_char_boundary(pos)`
 
-### Algorithm
+### Insertion (after validation passes)
 
 1. Record `add_start = self.add.len()` before appending
-2. Append `text` to the add buffer
+2. Append `text` to the add buffer (mutation safe now)
 3. Walk pieces accumulating `offset` to find which piece contains `pos`
 4. Calculate `split = pos - offset` (the split point within that piece)
 5. Replace the piece at index `i` with three new pieces
+6. Increment `self.len` by `text.len()`
+
+### Key design choice
+
+**Validate before mutating:** All validation happens before `self.add.push_str()`. If any check fails, the piece table remains unchanged.
 
 ### Piece formulas
 
@@ -189,5 +210,5 @@ The deleted text `"lo wo"` still exists in the original buffer — there is just
 ## Known limitations (to address later)
 
 - **Empty pieces accumulate** — inserting at a piece boundary creates a left piece with `len: 0`. Harmless but inefficient over time. A cleanup pass can remove zero-length pieces.
-- **Byte indices only** — `start` and `len` are byte offsets, not character counts. Multi-byte Unicode characters (anything outside ASCII) will cause incorrect splits or panics if a split lands inside a multi-byte character. Unicode support requires tracking character boundaries separately.
+- **Byte indices only** — `start` and `len` are byte offsets, not character counts. The API requires callers to supply byte offsets and UTF-8 char boundaries; character-level navigation is deferred to the `Cursor` wrapper.
 - **Single-piece deletion only** — the current delete implementation only handles deletions that fall within a single piece. Deletions spanning multiple pieces are not yet supported.

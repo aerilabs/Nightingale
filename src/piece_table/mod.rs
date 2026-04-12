@@ -34,7 +34,7 @@ pub struct PieceTable {
     original: String,
     add: String,
     pieces: Vec<Piece>,
-    len: usize, //cached document byte length
+    len: usize, // cached document byte length
 }
 
 impl fmt::Display for PieceTable {
@@ -132,7 +132,7 @@ impl PieceTable {
     /// assert_eq!(table.to_string(), "Hello!");
     /// ```
     pub fn delete(&mut self, pos: usize, len: usize) -> Result<(), String> {
-        let doc_len = self.pieces.iter().map(|p| p.len).sum();
+        let doc_len = self.len;
 
         if pos > doc_len {
             return Err(format!(
@@ -217,31 +217,27 @@ impl PieceTable {
     /// assert_eq!(table.to_string(), "Beginning. Middle. The end");
     /// ```
     pub fn insert(&mut self, pos: usize, text: &str) -> Result<(), String> {
-        let add_start = self.add.len();
-
         if text.is_empty() {
             return Err("insert text must be non-empty".to_owned());
         }
 
-        // Support for UTF-8 characters
-        if !self.original.is_char_boundary(pos) {
-            return Err(format!("pos {pos} is not on a UTF-8 character boundary"));
-        }
-
-        if pos > add_start {
-            return Err(format!(
-                "Value {pos} is greater than {add_start}, hence, out of bounds"
-            ));
-        } else {
-            self.add.push_str(text);
-        }
-
-        let doc_len: usize = self.pieces.iter().map(|p| p.len).sum();
+        let doc_len: usize = self.len;
         if pos > doc_len {
             return Err(format!(
                 "insert position {pos} is out of bounds (document length is {doc_len})"
             ));
         }
+
+        // Support for UTF-8 characters: reconstruct the document and check
+        // the boundary only after validating `pos` is within bounds.
+        let doc = self.to_string();
+        if !doc.is_char_boundary(pos) {
+            return Err(format!("pos {pos} is not on a UTF-8 character boundary"));
+        }
+
+        // Mutate after checks to ensure piece table remains consistent even if insert fails due to invalid input.
+        let add_start = self.add.len();
+        self.add.push_str(text);
 
         let mut offset = 0usize;
 
