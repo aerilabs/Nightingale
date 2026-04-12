@@ -59,11 +59,11 @@ In a UTF-8 string, only certain byte positions are valid character boundaries (m
 ### Example
 
 ```
-Text: "café" (4 bytes: c a f é[0xC3 0xA9])
+Text: "café" (5 bytes: c a f é[0xC3 0xA9])
 Positions: 0 1 2 3 4 5
 
-Cursor at 5 (end) → move_left() → lands at 4
-Cursor at 4 → move_left() → steps back to 3, 2 (both invalid), landing at 2 (char 'f')
+Cursor at 5 (end) → move_left() → lands at 3
+Cursor at 4 → move_left() → steps back to 3 (valid), landing at 3 (start of 'é')
 ```
 
 ---
