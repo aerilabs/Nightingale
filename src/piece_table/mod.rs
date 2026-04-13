@@ -134,16 +134,19 @@ impl PieceTable {
     pub fn delete(&mut self, pos: usize, len: usize) -> Result<(), String> {
         let doc_len = self.len;
 
+        // Ensure the starting position is within the document
         if pos > doc_len {
             return Err(format!(
                 "delete position {pos} is out of bounds (document length is {doc_len})"
             ));
         }
 
+        // Deleting 0 bytes is a no-op, nothing to do
         if len == 0 {
             return Ok(());
         }
 
+        // Ensure the deletion range doesn't extend beyond the document
         if len > doc_len - pos {
             return Err(format!(
                 "delete range [{pos}, {}) is out of bounds (document length is {doc_len})",
@@ -151,18 +154,56 @@ impl PieceTable {
             ));
         }
 
+        // `offset` tracks the cumulative document position at the start of each piece as we walk through the list, same as in insert
         let mut offset = 0usize;
         for i in 0..self.pieces.len() {
             let piece = self.pieces[i];
 
+            // Check if `pos` falls within this piece's document range
             if pos >= offset && pos < (offset + piece.len) {
+                // `split` is how far into this piece the deletion starts, converting from a global document position to a piece-local one
                 let split = pos - offset;
 
-                // Guard to prevent overflow
+                // Ensure the entire deletion fits within this single piece.
+                // We only support deletion within one piece — if the range spans multiple pieces this is an error
                 if split + len > piece.len {
                     return Err(format!(
                         "invalid delete range: {pos} {len} exceeds bounds of current piece ({}, {offset})",
                         piece.len
+                    ));
+                }
+
+                // Get the actual buffer this piece points to so we can validate UTF-8 character boundaries against real byte positions in that buffer
+                let source = match piece.buffer {
+                    BufferKind::Original => &self.original,
+                    BufferKind::Add => &self.add,
+                };
+
+                // Convert document-level split into a buffer-level byte index
+                // `buf_start` converts the piece-local `split` into an actual byte index in the buffer. `piece.start` is where this piece begins in the buffer, so adding `split` gives the real position.
+                // Example: piece.start = 0, split = 1 on "Héllo"
+                // buf_start = 0 + 1 = 1  (start of 'é' in the buffer)
+                let buf_start = piece.start + split;
+
+                // `buf_end` is where the deletion ends in the buffer
+                //
+                // Example: buf_start = 1, len = 2
+                // buf_end = 1 + 2 = 3  (byte after 'é')
+                let buf_end = buf_start + len;
+
+                // Validate that buf_start lands on a character boundary.
+                // is_char_boundary returns false if the byte is in the middle of a multi-byte character. For example on "Héllo", byte 2 is the second byte of 'é' — not a valid boundary.
+                if !source.is_char_boundary(buf_start) {
+                    return Err(format!(
+                        "delete position {pos} splits a multi-byte UTF-8 character"
+                    ));
+                }
+
+                // Same check for the end of the deletion range
+                if !source.is_char_boundary(buf_end) {
+                    return Err(format!(
+                        "delete end position {} splits a multi-byte UTF-8 character",
+                        pos + len
                     ));
                 }
 
@@ -171,21 +212,34 @@ impl PieceTable {
                     start: piece.start,
                     len: split,
                 };
-
                 let right_piece = Piece {
                     buffer: piece.buffer,
                     start: piece.start + split + len,
                     len: piece.len - split - len,
                 };
 
+                // Replace the original piece with left and right.
+                // Insert in reverse order at index i so the final sequence is [left_piece, right_piece]
                 self.pieces.remove(i);
-                self.pieces.insert(i, right_piece);
-                self.pieces.insert(i, left_piece);
+
+                // Only insert right if it has content, split + len == piece.len means deletion reaches the end of the piece so right would be empty
+                if split + len < piece.len {
+                    self.pieces.insert(i, right_piece);
+                }
+
+                // Only insert left if it has content, split == 0 means deletion starts at the beginning of the piece so left would be empty
+                if split > 0 {
+                    self.pieces.insert(i, left_piece);
+                }
+
                 break;
             }
+            // `pos` was not in this piece, advance offset to the next piece
             offset += piece.len;
         }
-        self.len -= len; // decrement by bytes deleted
+
+        // Update the cached document length
+        self.len -= len;
         Ok(())
     }
 
