@@ -101,7 +101,7 @@ Inserts `text` at byte position `pos` in the document. Returns an error if valid
 
 1. **Empty check:** Return error if `text` is empty
 2. **Bounds check:** Return error if `pos > self.len` (cached document length)
-3. **UTF-8 boundary check:** Reconstruct the full document and verify `pos` is on a char boundary using `doc.is_char_boundary(pos)`
+3. **UTF-8 boundary check (optimized):** Walk pieces to find which one contains `pos`, then validate the boundary against that piece's buffer without reconstructing the full document. For insertion at document end (`pos == doc_len`), no check is needed—appending is always valid.
 
 ### Insertion (after validation passes)
 
@@ -112,9 +112,11 @@ Inserts `text` at byte position `pos` in the document. Returns an error if valid
 5. Replace the piece at index `i` with three new pieces
 6. Increment `self.len` by `text.len()`
 
-### Key design choice
+### Key design choices
 
 **Validate before mutating:** All validation happens before `self.add.push_str()`. If any check fails, the piece table remains unchanged.
+
+**Efficient boundary checking:** UTF-8 boundary validation uses the piece structure directly (O(pieces)) instead of reconstructing the full document (O(document_size)). This preserves the piece table's performance advantage for local edits.
 
 ### Piece formulas
 

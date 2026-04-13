@@ -282,11 +282,27 @@ impl PieceTable {
             ));
         }
 
-        // Support for UTF-8 characters: reconstruct the document and check
-        // the boundary only after validating `pos` is within bounds.
-        let doc = self.to_string();
-        if !doc.is_char_boundary(pos) {
-            return Err(format!("pos {pos} is not on a UTF-8 character boundary"));
+        // Validate UTF-8 character boundary at `pos` using the piece structure directly,
+        // without reconstructing the entire document. This keeps the check O(pieces) instead of O(document_size).
+        // Special case: pos == doc_len (insertion at end) is always valid — no check needed.
+        if pos < doc_len {
+            let mut offset = 0usize;
+            for piece in &self.pieces {
+                if pos >= offset && pos < offset + piece.len {
+                    // Found the piece containing pos
+                    let split = pos - offset;
+                    let source = match piece.buffer {
+                        BufferKind::Original => &self.original,
+                        BufferKind::Add => &self.add,
+                    };
+                    let buf_pos = piece.start + split;
+                    if !source.is_char_boundary(buf_pos) {
+                        return Err(format!("pos {pos} is not on a UTF-8 character boundary"));
+                    }
+                    break;
+                }
+                offset += piece.len;
+            }
         }
 
         // Mutate after checks to ensure piece table remains consistent even if insert fails due to invalid input.
