@@ -1,6 +1,6 @@
 [package]
 name = "nightingale"
-author= "izzy.eth"
+authors = ["izzy.eth"]
 version = "0.1.0"
 edition = "2024"
 
