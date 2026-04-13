@@ -153,7 +153,7 @@ impl Cursor {
 
         // If already at or past the end, do nothing.
         if self.index >= doc.len() {
-            return;
+            self.index = doc.len();
         }
 
         // Move forward one byte and advance until we hit a valid character boundary.

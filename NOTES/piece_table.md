@@ -149,21 +149,28 @@ The original buffer still says `"hello world"` — untouched.
 ## Delete
 
 ```rust
-pub fn delete(&mut self, pos: usize, len: usize)
+pub fn delete(&mut self, pos: usize, len: usize) -> Result<(), String>
 ```
 
-Deletes `len` bytes starting at byte position `pos` in the document.
+Deletes `len` bytes starting at byte position `pos` in the document. Returns an error if the deletion range is invalid or crosses piece boundaries; the piece table remains unchanged.
 
-### How it works
+### Validation (before mutation)
 
-The piece containing `pos` is split into two pieces: the left half (before the deletion) and the right half (after the deletion). The middle region simply has no piece pointing to it anymore — it is not erased from the buffer, just no longer referenced.
+1. **Bounds check:** Return error if `pos > doc_len` (document length)
+2. **Range check:** Return error if `len == 0` (no-op but allowed)
+3. **Overflow check:** Return error if `pos + len > doc_len` (deletion extends past document end)
+4. **Single-piece constraint:** Return error if `split + len > piece.len` (deletion would cross into adjacent piece)
 
-### Algorithm
+### Deletion (after validation passes)
 
 1. Walk pieces accumulating `offset` to find which piece contains `pos`
-2. Calculate `split = pos - offset`
-3. Guard against overflow: if `split + len > piece.len`, the deletion goes out of bounds — skip
-4. Replace the piece at index `i` with two new pieces
+2. Calculate `split = pos - offset` (start position within the piece)
+3. Replace the piece at index `i` with two new pieces: left and right halves
+4. Update `self.len` by decrementing by `len` bytes
+
+### Key design choice
+
+**Validate before mutating and fail atomically:** All validation happens before any mutation. If any check fails, the piece table remains entirely unchanged. Single-piece deletion only — deletions spanning multiple pieces are not yet supported.
 
 ### Piece formulas
 
