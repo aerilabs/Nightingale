@@ -43,8 +43,8 @@ fn delete_from_middle() {
 #[test]
 fn delete_from_end() {
     let mut pt = PieceTable::new("Rust".to_string());
-    pt.delete(2, 1).unwrap();
-    assert_eq!(pt.to_string(), "Rut");
+    pt.delete(3, 1).unwrap();
+    assert_eq!(pt.to_string(), "Rus");
 }
 
 #[test]
