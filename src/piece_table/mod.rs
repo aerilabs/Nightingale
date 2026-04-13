@@ -27,7 +27,7 @@ struct Piece {
 /// use nightingale::PieceTable;
 ///
 /// let mut table = PieceTable::new("Hello, world!".to_string());
-/// table.insert(7, "Rust ");
+/// table.insert(7, "Rust ").unwrap();
 /// assert_eq!(table.to_string(), "Hello, Rust world!");
 /// ```
 pub struct PieceTable {
@@ -128,7 +128,7 @@ impl PieceTable {
     /// use nightingale::PieceTable;
     ///
     /// let mut table = PieceTable::new("Hello, world!".to_string());
-    /// table.delete(5, 7);  // Remove ", world" (7 bytes, all ASCII)
+    /// table.delete(5, 7).expect("Expected delete did not succeed");  // Remove ", world" (7 bytes, all ASCII)
     /// assert_eq!(table.to_string(), "Hello!");
     /// ```
     pub fn delete(&mut self, pos: usize, len: usize) -> Result<(), String> {
@@ -168,7 +168,7 @@ impl PieceTable {
                 // We only support deletion within one piece — if the range spans multiple pieces this is an error
                 if split + len > piece.len {
                     return Err(format!(
-                        "invalid delete range: {pos} {len} exceeds bounds of current piece ({}, {offset})",
+                        "invalid delete range: {pos}={pos} {len}={len} exceeds current piece bounds: piece_len={}, piec_doc_offset={offset})",
                         piece.len
                     ));
                 }
@@ -256,7 +256,7 @@ impl PieceTable {
     /// use nightingale::PieceTable;
     ///
     /// let mut table = PieceTable::new("Hello!".to_string());
-    /// table.insert(5, ", world");
+    /// table.insert(5, ", world").expect("Expected insert did not succeed");
     /// assert_eq!(table.to_string(), "Hello, world!");
     /// ```
     ///
@@ -266,8 +266,8 @@ impl PieceTable {
     /// use nightingale::PieceTable;
     ///
     /// let mut table = PieceTable::new("The end".to_string());
-    /// table.insert(0, "Beginning. ");
-    /// table.insert(11, "Middle. ");
+    /// table.insert(0, "Beginning. ").expect("Expected insert did not succeed");
+    /// table.insert(11, "Middle. ").expect("Expected insert did not succeed");
     /// assert_eq!(table.to_string(), "Beginning. Middle. The end");
     /// ```
     pub fn insert(&mut self, pos: usize, text: &str) -> Result<(), String> {
@@ -358,7 +358,7 @@ impl PieceTable {
     /// let mut table = PieceTable::new("Hello".to_string());
     /// assert_eq!(table.len(), 5);
     ///
-    /// table.insert(5, " world");
+    /// table.insert(5, " world").expect("inserting at the end should succeed");
     /// assert_eq!(table.len(), 11);
     /// ```
     pub fn len(&self) -> usize {

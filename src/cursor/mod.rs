@@ -17,7 +17,7 @@ use crate::piece_table::PieceTable;
 /// // Move right twice and insert text
 /// cursor.move_right(&table);
 /// cursor.move_right(&table);
-/// cursor.insert_char(&mut table, '!');
+/// cursor.insert_char(&mut table, '!').expect("Failed to insert character");
 ///
 /// assert_eq!(table.to_string(), "He!llo");
 /// ```
@@ -183,7 +183,7 @@ impl Cursor {
     /// let mut cursor = Cursor::new();
     ///
     /// cursor.move_right(&table);
-    /// cursor.insert_char(&mut table, 'e');
+    /// cursor.insert_char(&mut table, 'e').expect("Unable to insert character");
     ///
     /// assert_eq!(table.to_string(), "Hello");
     /// assert_eq!(cursor.get_index(), 2);
@@ -198,9 +198,9 @@ impl Cursor {
     /// let mut table = PieceTable::new(String::new());
     /// let mut cursor = Cursor::new();
     ///
-    /// cursor.insert_char(&mut table, 'H');
-    /// cursor.insert_char(&mut table, 'i');
-    /// cursor.insert_char(&mut table, '!');
+    /// cursor.insert_char(&mut table, 'H').expect("Unable to insert character");
+    /// cursor.insert_char(&mut table, 'i').expect("Unable to insert character");
+    /// cursor.insert_char(&mut table, '!').expect("Unable to insert character");
     ///
     /// assert_eq!(table.to_string(), "Hi!");
     /// assert_eq!(cursor.get_index(), 3);
@@ -236,7 +236,7 @@ impl Cursor {
     ///     cursor.move_right(&table);
     /// }
     ///
-    /// cursor.delete_char(&mut table);
+    /// cursor.delete_char(&mut table).expect("Failed to delete character");
     /// assert_eq!(table.to_string(), "Hell");
     /// assert_eq!(cursor.get_index(), 4);
     /// ```
@@ -251,7 +251,7 @@ impl Cursor {
     /// let mut cursor = Cursor::new();
     ///
     /// // Cursor is at position 0, delete does nothing
-    /// cursor.delete_char(&mut table);
+    /// cursor.delete_char(&mut table).unwrap();
     /// assert_eq!(table.to_string(), "Hi");
     /// assert_eq!(cursor.get_index(), 0);
     /// ```
