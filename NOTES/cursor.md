@@ -159,10 +159,10 @@ Deletes the character immediately before the cursor (backspace behavior). Return
 
 ```
 Text: "Café" (cursor at 5, after é)
-- char_indices() on "Caf" → [(0, 'C'), (1, 'a'), (2, 'f')]
-- last one is at offset 2
-- delete(2, 5 - 2 = 3) removes the é
-- result: "Caf", cursor at 2
+- char_indices() on "Café" → [(0, 'C'), (1, 'a'), (2, 'f'), (3, 'é')]
+- previous character starts at offset 3
+- delete(3, 5 - 3 = 2) removes the é
+- result: "Caf", cursor at 3
 ```
 
 ---
