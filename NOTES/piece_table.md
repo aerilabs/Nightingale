@@ -218,6 +218,6 @@ The deleted text `"lo wo"` still exists in the original buffer — there is just
 
 ## Known limitations (to address later)
 
-- **Empty pieces can accumulate** — the current `insert` implementation skips zero-length left/right pieces at piece boundaries, but other operations (for example, `delete` when it records both split halves) may still leave zero-length pieces behind. Harmless but inefficient over time. A cleanup pass can remove them.
+- **Zero-length pieces are currently avoided** — the current `insert` and `delete` implementations only record left/right split pieces when they contain content, so they do not intentionally create empty pieces. If future operations introduce them, a cleanup pass can remove them.
 - **Byte indices only** — `start` and `len` are byte offsets, not character counts. The API requires callers to supply byte offsets and UTF-8 char boundaries; character-level navigation is deferred to the `Cursor` wrapper.
 - **Single-piece deletion only** — the current delete implementation only handles deletions that fall within a single piece. Deletions spanning multiple pieces are not yet supported.
