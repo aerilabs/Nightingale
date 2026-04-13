@@ -79,9 +79,9 @@ Moves the cursor one character to the right (towards the document end).
 ### How it works
 
 1. Reconstruct the full document
-2. If cursor is already at or past the end (index >= doc.len()), return immediately
-3. Increment `index` by one byte and walk forward until landing on a valid UTF-8 character boundary (or document end)
-4. Cap position at document length and update cursor
+2. Clamp the current position to `doc.len()` so the cursor is never past the end
+3. If the clamped position is still before the end, increment `index` by one byte and walk forward until landing on a valid UTF-8 character boundary (or document end)
+4. Update cursor position, capped at document length
 
 ### Example
 
