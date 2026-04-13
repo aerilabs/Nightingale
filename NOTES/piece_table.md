@@ -157,7 +157,7 @@ Deletes `len` bytes starting at byte position `pos` in the document. Returns an 
 ### Validation (before mutation)
 
 1. **Bounds check:** Return error if `pos > doc_len` (document length)
-2. **Range check:** Return error if `len == 0` (no-op but allowed)
+2. **No-op check:** If `len == 0`, return `Ok(())` immediately without mutating anything
 3. **Overflow check:** Return error if `pos + len > doc_len` (deletion extends past document end)
 4. **Single-piece constraint:** Return error if `split + len > piece.len` (deletion would cross into adjacent piece)
 
