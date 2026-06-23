@@ -1,0 +1,1 @@
+console.log("Simply for git hooks!");
